@@ -140,6 +140,7 @@ def start_round():
     st.session_state.hint_budget = HINT_BUDGET
     st.session_state.rand_hint_index = 1
     st.session_state.custom_hint_index = 1
+    st.session_state.solved = False
 
 
 
@@ -205,7 +206,7 @@ if st.button("Generate Random Hint", disabled=(("hints_dict" not in st.session_s
 
 
 # Button to generate custom hints
-custom_hint_prompt = st.text_area(f"Request a custom hint here! Costs: {CUSTOM_HINT_COST} budget points! Tip: Be specific about what you want to know!")
+custom_hint_prompt = st.text_area(f"Request a custom hint here! Costs: {CUSTOM_HINT_COST} budget points!", placeholder="TIP: Be specific about what you want to know!")
 
 if st.button("Request Custom Hint", disabled=(("hints_dict" not in st.session_state) or (st.session_state.hint_budget < CUSTOM_HINT_COST) or (not custom_hint_prompt.strip()))):
     try:
@@ -221,13 +222,31 @@ if st.button("Request Custom Hint", disabled=(("hints_dict" not in st.session_st
             "AI API request failed. Please check it and try again. "
         )
 
+attempts_exist = (st.session_state.attempts_left > 0) and (not st.session_state.solved)
+
+guessed_country = st.text_input("Country Name:", placeholder="TIP: Hover over the map to get the names of possible countries! Make sure the spelling is correct!")
+
+if st.button("Submit", disabled=(not attempts_exist) or (not guessed_country.strip())): #check if attempts still exist and guess field not empty.
+    if guessed_country.strip().casefold() == st.session_state.target.casefold(): # forgive capitalization of country names in user input
+        st.session_state.solved = True
+    else:
+        st.session_state.attempts_left -= 1
+
+# status, placed below the button so it shows the updated state
+if st.session_state.solved:
+    st.success(f"You guessed correctly! The answer was {st.session_state.target}.")
+elif st.session_state.attempts_left <= 0:
+    st.error(f"Out of attempts! The answer was {st.session_state.target}.")
+else:
+    st.caption(f"Attempts left: {st.session_state.attempts_left}")
+
 # Chat log display code
 if "hints_dict" in st.session_state:
     with st.container(border=True):
         st.subheader("Hints")
         for key, value in st.session_state.hints_dict.items():
             st.markdown(f"- **{key}**: {value}")
-    
+
 #for debugging to inspect session state variables
 with st.expander("Debug: session state"):
     st.write(st.session_state)
