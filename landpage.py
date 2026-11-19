@@ -1,14 +1,19 @@
 import streamlit as st
 import textwrap
+from state import init_session_state
 
-if "game_started" not in st.session_state:
-    st.session_state.game_started = False
+st.set_page_config(
+    page_title= "Europe Country Guesser",
+    page_icon= "Q",
+    layout= "centered"
+)
 
-if not st.session_state.game_started:
-    st.title("How culturly base are you")
+# initialize state upon each render of the landing page
+init_session_state()
 
-# Explanation
+st.title("How Geograpgically Based Are You")
 
+# game explanation
 st.markdown(textwrap.dedent("""\
     ### Game Rules
     Welcome to the game!
@@ -26,15 +31,30 @@ st.markdown(textwrap.dedent("""\
     * If a user consumes all 4 allowed attempts in a round, it is **Game Over**.
     * Users cannot skip any round. If you get stuck, you can rerun the game, and the previous game will count as a loss.
 
-    **How to calculate your score:**  
-    **
+    **How the score is calculated:**
+    * The total score is 100.  
+    * Guesses: each failed attempt deducts 5 points.
+    * Rregular hints: each regular hint consumed deducts 2 points.
+    * Special hints: each special hint consumed deducts 10 points.
 """))
 
 
-st.divider()
+st.divider() 
 
-if st.button("Start Game", type="primary", use_container_width=True):
-    st.switch_page("pages/round.py")
+col1, col2, col3 = st.columns(3)
 
-if st.button("Stats", type= "primary", use_container_width= True):
-    st.switch_page("pages/statistics.py")
+with col1:
+    if st.button("Start", type="primary", use_container_width=True):
+        # refreash the content of the game
+        st.session_state.game_active= False
+        st.switch_page("pages/round.py")
+
+with col2:
+    if st.button("Start Animal Guessing Game", use_container_width= True):
+        st.session_state.game_active = False
+        st.switch_page("pages/animal_round.py")
+
+with col3:
+    if st.button("view statistics", use_container_width=True):
+        st.switch_page("pages/statistics.py")
+
