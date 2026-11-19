@@ -1,0 +1,22 @@
+[
+    {"name": "Lion", "hint": "Known as the king of the jungle.", "s_hint": "Starts with 'L' and lives in prides."},
+    {"name": "Tiger", "hint": "The largest wild cat species with orange fur and black stripes.", "s_hint": "Starts with 'T' and loves swimming."},
+    {"name": "Elephant", "hint": "The largest living land animal.", "s_hint": "Starts with 'E' and has a long trunk."},
+    {"name": "Giraffe", "hint": "The tallest living terrestrial animal.", "s_hint": "Starts with 'G' and has a very long neck."},
+    {"name": "Zebra", "hint": "An African equine with distinctive black-and-white stripes.", "s_hint": "Starts with 'Z' and looks like a striped horse."},
+    {"name": "Kangaroo", "hint": "A marsupial native to Australia that hops.", "s_hint": "Starts with 'K' and carries babies in a pouch."},
+    {"name": "Penguin", "hint": "A flightless black-and-white bird adapted for swimming.", "s_hint": "Starts with 'P' and lives mostly in the Southern Hemisphere."},
+    {"name": "Dolphin", "hint": "An intelligent marine mammal known for echolocation.", "s_hint": "Starts with 'D' and jumps out of ocean waves."},
+    {"name": "Panda", "hint": "A bear native to China that eats almost exclusively bamboo.", "s_hint": "Starts with 'P' and has black patches around its eyes."},
+    {"name": "Cheetah", "hint": "The fastest land animal.", "s_hint": "Starts with 'C' and has black tear tracks on its face."},
+    {"name": "Wolf", "hint": "A wild canine that hunts in packs.", "s_hint": "Starts with 'W' and is the ancestor of domestic dogs."},
+    {"name": "Fox", "hint": "A small omnivorous mammal with a bushy tail.", "s_hint": "Starts with 'F' and is often reddish-orange."},
+    {"name": "Bear", "hint": "A large, heavy mammal that often hibernates in winter.", "s_hint": "Starts with 'B' and loves honey and salmon."},
+    {"name": "Eagle", "hint": "A large bird of prey with powerful vision.", "s_hint": "Starts with 'E' and builds high cliff or tree nests."},
+    {"name": "Shark", "hint": "A predatory fish with a cartilaginous skeleton.", "s_hint": "Starts with 'S' and has multiple rows of replaceable teeth."},
+    {"name": "Octopus", "hint": "A soft-bodied sea creature with eight arms.", "s_hint": "Starts with 'O' and has three hearts."},
+    {"name": "Chameleon", "hint": "A lizard famous for changing skin color.", "s_hint": "Starts with 'C' and has eyes that move independently."},
+    {"name": "Flamingo", "hint": "A tall wading bird with bright pink feathers.", "s_hint": "Starts with 'F' and often stands on one leg."},
+    {"name": "Koala", "hint": "An arboreal Australian marsupial that sleeps up to 20 hours a day.", "s_hint": "Starts with 'K' and eats eucalyptus leaves."},
+    {"name": "Crocodile", "hint": "A large semi-aquatic reptile with a powerful bite.", "s_hint": "Starts with 'C' and lurks in tropical rivers."}
+]
