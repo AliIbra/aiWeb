@@ -42,5 +42,5 @@ After each game of five rounds, players will be shown the statistics of their ov
 
 Streamlit Deployment Link:
 
-(deployment in progress)
+https://jtmmcrypbtw7dempebpjvn.streamlit.app/
 
