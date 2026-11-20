@@ -41,7 +41,7 @@ st.markdown(textwrap.dedent("""\
 
 st.divider() 
 
-row_col1, row_col2 = st.columms(2)
+row_col1, row_col2 = st.columns(2)
 
 with row_col1:
     if st.button("Europe", type="primary", use_container_width=True):
