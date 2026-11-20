@@ -31,11 +31,6 @@ st.markdown(textwrap.dedent("""\
     * If a user consumes all 4 allowed attempts in a round, it is **Game Over**.
     * Users cannot skip any round. If you get stuck, you can rerun the game, and the previous game will count as a loss.
 
-    **How the score is calculated:**
-    * The total score is 100.  
-    * Guesses: each failed attempt deducts 5 points.
-    * Rregular hints: each regular hint consumed deducts 2 points.
-    * Special hints: each special hint consumed deducts 10 points.
 """))
 
 
