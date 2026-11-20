@@ -1,6 +1,6 @@
 import streamlit as st
 import textwrap
-from state import init_session_state
+from state import init_session_state, start_new_game
 
 st.set_page_config(
     page_title= "Europe Country Guesser",
@@ -41,20 +41,27 @@ st.markdown(textwrap.dedent("""\
 
 st.divider() 
 
-col1, col2, col3 = st.columns(3)
+row_col1, row_col2 = st.columms(2)
 
-with col1:
-    if st.button("Start", type="primary", use_container_width=True):
-        # refreash the content of the game
-        st.session_state.game_active= False
+with row_col1:
+    if st.button("Europe", type="primary", use_container_width=True):
+        st.session_state["selected_continet"] = "Europe"
+        start_new_game()
         st.switch_page("pages/round.py")
 
-with col2:
-    if st.button("Start Animal Guessing Game", use_container_width= True):
-        st.session_state.game_active = False
-        st.switch_page("pages/animal_round.py")
+with row_col2:
+    if st.button("Asia", type="primary", use_container_width=True):
+        st.session_state["selected_continet"] = "Asia"
+        start_new_game()
+        st,start_new_game("pages/round.py")
 
-with col3:
-    if st.button("view statistics", use_container_width=True):
+row2_col1, row2_col2= st.columns(2)
+with row2_col1:
+    if st.button("Animal guessing", use_container_width= True):
+        start_new_game()
+        st.switch_page("pages/animal_round.py")
+with row2_col2:
+    if st.button("statistics", use_container_width=True):
         st.switch_page("pages/statistics.py")
+
 
