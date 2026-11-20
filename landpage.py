@@ -55,13 +55,7 @@ with row_col2:
         start_new_game()
         st.switch_page("pages/round.py")
 
-row2_col1, row2_col2= st.columns(2)
-with row2_col1:
-    if st.button("Animal guessing", use_container_width= True):
-        start_new_game()
-        st.switch_page("pages/animal_round.py")
-with row2_col2:
-    if st.button("statistics", use_container_width=True):
-        st.switch_page("pages/statistics.py")
+#if st.button("statistics", use_container_width=True):
+#        st.switch_page("pages/statistics.py")
 
 
