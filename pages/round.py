@@ -272,7 +272,7 @@ if "target" not in st.session_state:
 
 attempts_exist = (st.session_state.attempts_left > 0) and (not st.session_state.solved)
 
-if st.button("Generate Random Hint", disabled=((not attempts_exist) or ("hints_dict" not in st.session_state) or st.session_state.hint_budget < RANDOM_HINT_COST)):
+if st.button(f"Generate Random Hint (costs {RANDOM_HINT_COST})", disabled=((not attempts_exist) or ("hints_dict" not in st.session_state) or st.session_state.hint_budget < RANDOM_HINT_COST)):
     try:
         with st.spinner("Generating random hint …"):
             rand_hint = generate_random_hint(st.session_state.target, st.session_state.hints_dict)
@@ -290,7 +290,7 @@ if st.button("Generate Random Hint", disabled=((not attempts_exist) or ("hints_d
 # Button to generate custom hints
 custom_hint_prompt = st.text_area(f"Request a custom hint here! Costs: {CUSTOM_HINT_COST} budget points!", placeholder="TIP: Be specific about what you want to know!")
 
-if st.button("Request Custom Hint", disabled=((not attempts_exist) or ("hints_dict" not in st.session_state) or (st.session_state.hint_budget < CUSTOM_HINT_COST) or (not custom_hint_prompt.strip()))):
+if st.button(f"Request Custom Hint (costs {CUSTOM_HINT_COST})", disabled=((not attempts_exist) or ("hints_dict" not in st.session_state) or (st.session_state.hint_budget < CUSTOM_HINT_COST) or (not custom_hint_prompt.strip()))):
     try:
         with st.spinner("Answer is being created …"):
             custom_hint = generate_custom_hint(st.session_state.target, custom_hint_prompt)
@@ -304,7 +304,7 @@ if st.button("Request Custom Hint", disabled=((not attempts_exist) or ("hints_di
         st.error(
             "AI API request failed. Please check it and try again. "
         )
-
+st.markdown(f"#### Hint budget: {st.session_state.hint_budget} / {HINT_BUDGET}")
 
 guessed_country = st.text_input("Country Name:", placeholder="TIP: Hover over the map to get the names of possible countries! Make sure the spelling is correct!", key=f"guess_input_{st.session_state.current_round_id}") #key helps reset the input widget to empty each round.
 
@@ -325,7 +325,7 @@ elif st.session_state.attempts_left <= 0:
     end_round()
     show_result(st.session_state.solved, st.session_state.target, st.session_state["game_active"])
 else:
-    st.caption(f"Attempts left: {st.session_state.attempts_left}")
+    st.markdown(f"#### Attempts left: {st.session_state.attempts_left}")
 
 # Chat log display code
 if "hints_dict" in st.session_state:
@@ -335,5 +335,5 @@ if "hints_dict" in st.session_state:
             st.markdown(f"- **{key}**: {value}")
 
 #for debugging to inspect session state variables
-with st.expander("Debug: session state"):
-    st.write(st.session_state)
+#with st.expander("Debug: session state"):
+#    st.write(st.session_state)
