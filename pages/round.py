@@ -84,7 +84,7 @@ REGIONS = {
     "Asia": ASIA,
 }
 
-region = st.session_state.get("region", "Asia")   # hard-coded fallback for testing
+region = st.session_state.get("selected_continent", "Asia")   # hard-coded fallback for testing
 countries = REGIONS[region]                          # the actual dict
 
 MAX_ATTEMPTS = 3
@@ -170,6 +170,7 @@ def start_round():
     st.session_state.rand_hint_index = 1
     st.session_state.custom_hint_index = 1
     st.session_state.solved = False
+    st.session_state.round_id = st.session_state.round_id + 1
 
 
 
@@ -219,6 +220,8 @@ if "target" not in st.session_state:
 if "target" not in st.session_state:
     st.stop()   # round failed to start, so don't render the rest
 
+attempts_exist = (st.session_state.attempts_left > 0) and (not st.session_state.solved)
+
 if st.button("Generate Random Hint", disabled=((not attempts_exist) or ("hints_dict" not in st.session_state) or st.session_state.hint_budget < RANDOM_HINT_COST)):
     try:
         with st.spinner("Generating random hint …"):
@@ -252,7 +255,6 @@ if st.button("Request Custom Hint", disabled=((not attempts_exist) or ("hints_di
             "AI API request failed. Please check it and try again. "
         )
 
-attempts_exist = (st.session_state.attempts_left > 0) and (not st.session_state.solved)
 
 guessed_country = st.text_input("Country Name:", placeholder="TIP: Hover over the map to get the names of possible countries! Make sure the spelling is correct!")
 
