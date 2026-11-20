@@ -128,7 +128,7 @@ def generate_random_hint(country, old_hints):
     prompt = (
         "You are the hint giver in a country guessing game. "
         f"The secret country is {country}. "
-        "Provide a short sentence containing a notable factual hint about this country. You have been provided with a dictionary {old_hints} containing old hints so take care to generate something without any topical or domain overlap with hints already within old_hints. Hint domains may include: local landmarks, unique cultural practices, demographics, notable scientific or artistic achievements, the natural landscape features of the country."
+        f"Provide a short sentence containing a notable factual hint about this country. You have been provided with a dictionary {old_hints} containing old hints so take care to generate something without any topical or domain overlap with hints already within old_hints. Hint domains may include: local landmarks, unique cultural practices, demographics, notable scientific or artistic achievements, the natural landscape features of the country."
         "Never write the country's name, its capital, or its demonym (e.g. 'German'). "
         "Reply with only the hint as one short sentence, without quotes or labels."
     )
