@@ -84,7 +84,7 @@ REGIONS = {
     "Asia": ASIA,
 }
 
-region = st.session_state.get("region", "Europe")   # hard-coded fallback for testing
+region = st.session_state.get("region", "Asia")   # hard-coded fallback for testing
 countries = REGIONS[region]                          # the actual dict
 
 MAX_ATTEMPTS = 3
@@ -185,7 +185,7 @@ fig = px.choropleth(
     color_discrete_sequence=px.colors.qualitative.Alphabet,
     hover_name="country",
     hover_data={"iso": False},
-    scope="europe",
+    scope="asia",
 )
 fig.update_geos(showcountries=True)
 fig.update_layout(margin=dict(l=0, r=0, t=0, b=0))
@@ -193,7 +193,6 @@ fig.update_traces(hovertemplate="%{hovertext}<extra></extra>")
 
 st.plotly_chart(fig)
 
-TARGET = "Russia"   # hard-coded for now
 
 #if st.button("Generate default hints"):
 #    try:
@@ -220,7 +219,7 @@ if "target" not in st.session_state:
 if "target" not in st.session_state:
     st.stop()   # round failed to start, so don't render the rest
 
-if st.button("Generate Random Hint", disabled=(("hints_dict" not in st.session_state) or st.session_state.hint_budget < RANDOM_HINT_COST)):
+if st.button("Generate Random Hint", disabled=((not attempts_exist) or ("hints_dict" not in st.session_state) or st.session_state.hint_budget < RANDOM_HINT_COST)):
     try:
         with st.spinner("Generating random hint …"):
             rand_hint = generate_random_hint(st.session_state.target, st.session_state.hints_dict)
@@ -228,6 +227,7 @@ if st.button("Generate Random Hint", disabled=(("hints_dict" not in st.session_s
             st.session_state.hints_dict[f"r_hint_{st.session_state.rand_hint_index}"] = rand_hint
             st.session_state.hint_budget -= RANDOM_HINT_COST
             st.session_state.rand_hint_index += 1
+            st.write("Hint generated! Check below!")
     except AuthenticationError:
         st.error("API key was not accepted. Please check it.")
     except OpenAIError:
@@ -237,12 +237,13 @@ if st.button("Generate Random Hint", disabled=(("hints_dict" not in st.session_s
 # Button to generate custom hints
 custom_hint_prompt = st.text_area(f"Request a custom hint here! Costs: {CUSTOM_HINT_COST} budget points!", placeholder="TIP: Be specific about what you want to know!")
 
-if st.button("Request Custom Hint", disabled=(("hints_dict" not in st.session_state) or (st.session_state.hint_budget < CUSTOM_HINT_COST) or (not custom_hint_prompt.strip()))):
+if st.button("Request Custom Hint", disabled=((not attempts_exist) or ("hints_dict" not in st.session_state) or (st.session_state.hint_budget < CUSTOM_HINT_COST) or (not custom_hint_prompt.strip()))):
     try:
         with st.spinner("Answer is being created …"):
             custom_hint = generate_custom_hint(st.session_state.target, custom_hint_prompt)
             st.session_state.hints_dict[custom_hint_prompt] = custom_hint
             st.session_state.hint_budget -= CUSTOM_HINT_COST
+            st.write("Hint generated! Check below!")
     except AuthenticationError:
         st.error("API was not accept. Please check it.")
 
