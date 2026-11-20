@@ -45,15 +45,15 @@ row_col1, row_col2 = st.columns(2)
 
 with row_col1:
     if st.button("Europe", type="primary", use_container_width=True):
-        st.session_state["selected_continet"] = "Europe"
+        st.session_state["selected_continent"] = "Europe"
         start_new_game()
         st.switch_page("pages/round.py")
 
 with row_col2:
     if st.button("Asia", type="primary", use_container_width=True):
-        st.session_state["selected_continet"] = "Asia"
+        st.session_state["selected_continent"] = "Asia"
         start_new_game()
-        st,start_new_game("pages/round.py")
+        st.switch_page("pages/round.py")
 
 row2_col1, row2_col2= st.columns(2)
 with row2_col1:

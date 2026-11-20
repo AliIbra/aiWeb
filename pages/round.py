@@ -5,6 +5,7 @@ import re
 import random
 import plotly.express as px
 from openai import OpenAI
+from state import init_session_state
 
 st.set_page_config(page_title="Guess the Country")
 
@@ -87,6 +88,7 @@ REGIONS = {
 region = st.session_state.get("selected_continent", "Asia")   # hard-coded fallback for testing
 countries = REGIONS[region]                          # the actual dict
 
+MAX_ROUNDS = 5
 MAX_ATTEMPTS = 3
 HINT_BUDGET = 6
 RANDOM_HINT_COST = 1
@@ -121,7 +123,7 @@ def parse_hints(raw):
     if len(hint_list) == len(KEYS):
         hints_dict = dict(zip(KEYS, hint_list))
     else:
-        st.error("The model's reply didn't have all four hints. Please try again.")
+        return False
     return hints_dict
 
 def generate_random_hint(country, old_hints):
@@ -158,11 +160,12 @@ def generate_custom_hint(country, custom_hint_prompt):
     return response.choices[0].message.content.strip().strip('"')
 
 def start_round():
-    target = random.choice(list(countries))
+    remaining = [c for c in countries if c not in st.session_state["played"]]
+    target = random.choice(remaining)
     hints = parse_hints(generate_default_hints(target))
     if not hints:
         st.error("The model's reply didn't have all four hints. Please try again.")
-        return
+        return False
     st.session_state.target = target
     st.session_state.hints_dict = hints
     st.session_state.attempts_left = MAX_ATTEMPTS
@@ -170,7 +173,68 @@ def start_round():
     st.session_state.rand_hint_index = 1
     st.session_state.custom_hint_index = 1
     st.session_state.solved = False
-    st.session_state.round_id = st.session_state.round_id + 1
+    st.session_state.current_round_id = st.session_state.current_game["round_id"] + 1
+    return True
+
+def end_round():
+    hint_budget_weight = 35
+    attempts_taken_weight = 65
+    st.session_state.this_round = {}
+    st.session_state.this_round["game_id"] = st.session_state.current_game["game_id"]
+    st.session_state.this_round["round_id"] = st.session_state.current_round_id
+    st.session_state.this_round["num_attempts"] = MAX_ATTEMPTS - st.session_state.attempts_left
+
+    #update round_id for current_game
+    st.session_state.current_game["round_id"] = st.session_state.this_round["round_id"]
+
+    #remove guessed country from list
+    st.session_state["played"].append(st.session_state.target)
+    if not st.session_state.solved:
+        st.session_state.this_round["quality"] = 0
+    else:
+        st.session_state.this_round["quality"] = hint_budget_weight * (st.session_state.hint_budget/HINT_BUDGET) + attempts_taken_weight * ((st.session_state.attempts_left
+ + 1)/MAX_ATTEMPTS) # st.session_state.attempts_left incremented by 1 because the final guess was correct. This was it allows someone to get a quality score of 100 if successful on the first attempt with no hints used.
+
+    #add this_round to current_game
+    st.session_state["current_game"]["rounds"].append(st.session_state.this_round)
+
+    #st.session_state["game_active"] flip to false at specific round number
+    if st.session_state.this_round["round_id"] == MAX_ROUNDS:
+        st.session_state["game_active"] = False
+        st.session_state["game_history"].append(st.session_state["current_game"])
+
+def safe_start_round():
+    """
+    Start a new round behind a spinner, showing an error message if the API
+    call fails. Returns True if the round started, False otherwise.
+    """
+    try:
+        with st.spinner("Starting round …"):
+            return start_round()
+    except AuthenticationError:
+        st.error("API key was not accepted. Please check it.")
+    except OpenAIError:
+        st.error("AI request failed. Please try again.")
+    return False
+
+
+@st.dialog("Round result", dismissible=False)
+def show_result(solved, target, more_rounds):
+    if solved:
+        st.success(f"Correct! The answer was {target}.")
+    else:
+        st.error(f"Out of attempts! The answer was {target}.")
+
+    if more_rounds:
+        col1, col2 = st.columns(2)
+        if col1.button("Next round", type="primary"):
+            if safe_start_round():      # returns True on success, False on error
+                st.rerun()
+        if col2.button("Quit game"):
+            st.switch_page("landpage.py")    # your real page path
+    else:
+        if st.button("See results", type="primary"):
+            st.switch_page("pages/statistics.py")
 
 
 
@@ -186,27 +250,13 @@ fig = px.choropleth(
     color_discrete_sequence=px.colors.qualitative.Alphabet,
     hover_name="country",
     hover_data={"iso": False},
-    scope="asia",
+    scope=region.casefold(),
 )
 fig.update_geos(showcountries=True)
 fig.update_layout(margin=dict(l=0, r=0, t=0, b=0))
 fig.update_traces(hovertemplate="%{hovertext}<extra></extra>")
 
 st.plotly_chart(fig)
-
-
-#if st.button("Generate default hints"):
-#    try:
-#        with st.spinner("Generating hints …"):
-#           raw_hints = generate_default_hints(TARGET)
-#            st.session_state.hints_dict = parse_hints(raw_hints)
-#        st.write(st.session_state.hints_dict)
-#    except AuthenticationError:
-#        st.error("API key was not accepted. Please check it.")
-#    except OpenAIError:
-#        st.error("AI request failed. Please try again.")
-
-
 
 if "target" not in st.session_state:
     try:
@@ -256,7 +306,7 @@ if st.button("Request Custom Hint", disabled=((not attempts_exist) or ("hints_di
         )
 
 
-guessed_country = st.text_input("Country Name:", placeholder="TIP: Hover over the map to get the names of possible countries! Make sure the spelling is correct!")
+guessed_country = st.text_input("Country Name:", placeholder="TIP: Hover over the map to get the names of possible countries! Make sure the spelling is correct!", key=f"guess_input_{st.session_state.current_round_id}") #key helps reset the input widget to empty each round.
 
 if st.button("Submit", disabled=(not attempts_exist) or (not guessed_country.strip())): #check if attempts still exist and guess field not empty.
     if guessed_country.strip().casefold() == st.session_state.target.casefold(): # forgive capitalization of country names in user input
@@ -267,9 +317,13 @@ if st.button("Submit", disabled=(not attempts_exist) or (not guessed_country.str
 
 # status, placed below the button so it shows the updated state
 if st.session_state.solved:
-    st.success(f"You guessed correctly! The answer was {st.session_state.target}.")
+    end_round()
+    show_result(st.session_state.solved, st.session_state.target, st.session_state["game_active"])
+    # st.success(f"You guessed correctly! The answer was {st.session_state.target}.")
 elif st.session_state.attempts_left <= 0:
-    st.error(f"Out of attempts! The answer was {st.session_state.target}.")
+    #st.error(f"Out of attempts! The answer was {st.session_state.target}.")
+    end_round()
+    show_result(st.session_state.solved, st.session_state.target, st.session_state["game_active"])
 else:
     st.caption(f"Attempts left: {st.session_state.attempts_left}")
 

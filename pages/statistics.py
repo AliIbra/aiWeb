@@ -1,151 +1,119 @@
-import streamlit as st
 import pandas as pd
 import plotly.express as px
+import streamlit as st
 from state import init_session_state
 
+st.set_page_config(page_title="Game Statistics", layout="centered")
 
-# if "game_history" not in st.session_state:
-#    st.session_state.game_history = [
-#        {
-#            "game_id": "Game 1",
-#            "rounds": [
-#                {"round_num": 1, "guesses": 2, "hints": 1, "s_hints": 0, "quality": 88},
-#                {"round_num": 2, "guesses": 3, "hints": 0, "s_hints": 1, "quality": 75},
-#                {"round_num": 3, "guesses": 1, "hints": 0, "s_hints": 0, "quality": 95},
-#                {"round_num": 4, "guesses": 4, "hints": 2, "s_hints": 0, "quality": 68},
-#                {"round_num": 5, "guesses": 2, "hints": 1, "s_hints": 0, "quality": 88}
-#            ]
-#        },
-#        {
-#            "game_id": "Game 2",
-#            "rounds": [
-#                {"round_num": 1, "guesses": 4, "hints": 1, "s_hints": 0, "quality": 82},
-#                {"round_num": 2, "guesses": 2, "hints": 0, "s_hints": 0, "quality": 90},
-#                {"round_num": 3, "guesses": 4, "hints": 1, "s_hints": 1, "quality": 63},
-#                {"round_num": 4, "guesses": 1, "hints": 0, "s_hints": 0, "quality": 95},
-#                {"round_num": 5, "guesses": 3, "hints": 2, "s_hints": 0, "quality": 71}
-#            ]
-#        }
-#    ] """
-
-
-#if "game_history" not in st.session_state:
-    #st.session_state.game_history = []
-
-st.set_page_config(page_title= "Game Statistics", layout= "centered")
-
-
+# Makes sure st.session_state["game_history"] exists even if this page is opened first.
 init_session_state()
 
+# Won / Lost colors: blue + orange, checked to stay distinguishable for colorblind readers.
+RESULT_COLORS = {"Won": "#2a78d6", "Lost": "#eb6834"}
+
 st.title("Player Statistics")
-# read the saved history
+
+# ── 1. Read the saved history ─────────────────────────────────────────────────
+# game_history is a list of finished games. Each game looks like:
+#   {"game_id": "Game 1", "round_id": 5,
+#    "rounds": [{"game_id": ..., "round_id": 1, "num_attempts": 2, "quality": 71.7}, ...]}
+# Only the fields that round.py's end_round() actually saves are used below.
 history = st.session_state["game_history"]
 
-# no history case
-if not history:
-    st.info("Haven't finished any games yet. Go to the Game round page and try it out!")
-    if st.button("Go to Game", type="primary"):
-        st.switch_page("pages/round.py")
-    st.stop()
 
-# convert json (stats) to pandas df
 rows = []
 for g in history:
     for r in g["rounds"]:
         rows.append({
             "Game": g["game_id"],
             "Round": r["round_id"],
-            "Guesses": r["guesses"],
-            "Hints": r["hints"],
-            "Special Hints": r["s_hints"],
-            "Quality score": r["quality"],
-            "won": r["quality"] > 0,
+            "Attempts": r["num_attempts"],
+            "Quality": r["quality"],
         })
 
+# ── 2. No finished games yet ──────────────────────────────────────────────────
+if not rows:
+    st.info("Haven't finished any games yet. Go to the start page and play one!")
+    if st.button("Go to start page", type="primary"):
+        st.switch_page("landpage.py")
+    st.stop()
+
+# ── 3. Build the table the page works from ───────────────────────────────────
 df = pd.DataFrame(rows)
 
-# extract variables
-total_games = len(history)
-total_rounds = len(df)
-win_avg = (df["won"].sum() / total_rounds) * 100
-avg_quality = df["Quality score"].mean()
-avg_guesses= df["Guesses"].mean()
+# A (Game, Round) pair is unique by design, so this only removes accidental repeats
+# (for example if the same game was appended to game_history twice).
+df = df.drop_duplicates(subset=["Game", "Round"]).reset_index(drop=True)
 
-# the graph 4 sections:
-bar1, bar2, bar3, bar4 = st.columns(4)
-bar1.metric("Game Played", total_games)
-bar2.metric("Win Rate", f"{win_avg:.0f}%")
-bar3.metric("Avg Quality", f"{avg_quality:.1f}/ 100")
-bar4.metric("Avg Guesses", f"{avg_guesses:.1f}")
+df["Quality"] = df["Quality"].round(1)
+
+# round.py gives a lost round quality 0, and any won round at least
+# 65 / MAX_ATTEMPTS points, so "quality above 0" means the round was won.
+df["Result"] = df["Quality"].gt(0).map({True: "Won", False: "Lost"})
+
+# Short label for the x-axis (the "Round" column stays a plain number).
+df["Label"] = df["Game"] + " · R" + df["Round"].astype(str)
+
+# ── 4. Headline numbers ──────────────────────────────────────────────────────
+won = df["Result"] == "Won"
+
+total_games = df["Game"].nunique()
+win_rate = won.mean() * 100
+avg_quality = df["Quality"].mean()
+# Attempts for a lost round are always the maximum, so averaging only the won
+# rounds gives a meaningful "how fast do you find it" number.
+avg_attempts_won = f"{df.loc[won, 'Attempts'].mean():.1f}" if won.any() else "–"
+
+m1, m2, m3, m4 = st.columns(4)
+m1.metric("Games", total_games)
+m2.metric("Win rate", f"{win_rate:.0f}%")
+m3.metric("Avg quality", f"{avg_quality:.1f}")
+m4.metric("Attempts / win", avg_attempts_won)
 
 st.divider()
 
-# scores according to the round
+# ── 5. Quality per round ─────────────────────────────────────────────────────
 st.subheader("Quality across rounds")
-df["Round"] = df["Game"] + " - R" + df["Round"].astype(str)
 
-
-# creating the bar chart
 fig = px.bar(
     df,
-    x = "Round",
-    y= "Quality score",
-    color= "Game",
-    text= "Quality score",
-    range_y = [0,100],
+    x="Label",
+    y="Quality",
+    color="Result",
+    color_discrete_map=RESULT_COLORS,
+    # keep rounds in play order (otherwise all "Won" bars would be grouped first)
+    category_orders={"Label": df["Label"].tolist(), "Result": ["Won", "Lost"]},
+    range_y=[0, 110],
 )
-# positioning
-fig.update_traces(textposition="outside")
-
-# chart display config
+if len(df) <= 15:  # value labels only while there is room for them
+    fig.update_traces(texttemplate="%{y:.0f}", textposition="outside")
 fig.update_layout(
-    xaxis_title= "Game & Round",
-    yaxis_title = "Quality Score",
-    showlegend= True,
-    height = 400,
+    xaxis_title="Game & round",
+    yaxis_title="Quality score (max 100)",
+    legend_title_text="Result",
+    bargap=0.35,
+    height=400,
 )
 
-# Streamlit's render
-st.plotly_chart(fig, use_container_width= True)
+st.plotly_chart(fig)
 
 st.divider()
 
-# deatialed statistics for each game played
-# individual game breakdown
-st.subheader("Game Breakdown")
-# select the game that you want to see
-selected_game= st.selectbox("Please select a game to breakdown: ", [g["game_id"] for g in history])
+# ── 6. Breakdown of one game ─────────────────────────────────────────────────
+st.subheader("Game breakdown")
 
-# create a dataframe for the selected game
-game_df = df[df["Game"] == selected_game][["Round", "Guesses", "Hints", "Special Hints", "Quality score"]]
-st.dataframe(game_df, use_container_width= True, hide_index=True)
+games = df["Game"].unique().tolist()
+selected_game = st.selectbox(
+    "Select a game:",
+    games,
+    index=len(games) - 1,  # newest game first
+)
+
+game_df = df[df["Game"] == selected_game][["Round", "Result", "Attempts", "Quality"]]
+st.dataframe(game_df, hide_index=True)
 
 st.divider()
 
-nav1, nav2 = st.columns(2)
-with nav1:
-    if st.button("Back to Home", use_container_width=True):
-        st.switch_page("landpage.py")
-with nav2:
-    if st.button("Play Another Game", type="primary", use_container_width=True):
-        st.switch_page("pages/round.py")
-
-
-
-        
-#    st.subheader("Number of guesses per round")
-#    chart_data = df.pivot(index="round_num", columns="game_id", values="guesses")
-#    st.bar_chart(chart_data)
-
-#    expander = st.expander("See quality score formula explanation")
-#    expander.write("""
-#    #The quality score for each round is calculated based on the following formula:
-        
-#    #$$\\text{Quality} = 100 - (5 \\times \\text{guesses}) - (2 \\times \\text{hints}) - (10 \\times \\text{s\\_hints})$$
-        
-#    #* **Guesses**: Each attempt deducts 5 points.
-#    #* **Hints**: Each regular hint consumed deducts 2 points.
-#    #* **Special Hints**: Each special hint consumed deducts 10 points.
-#    """)
-# if st.button("Go back to start"):
- #   st.switch_page("landpage.py") """
+# New games (and the region choice) are set up on the start page.
+if st.button("Play another game", type="primary"):
+    st.switch_page("landpage.py")
