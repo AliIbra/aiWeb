@@ -2,6 +2,7 @@ import pandas as pd
 import streamlit as st
 
 import re
+import random
 import plotly.express as px
 from openai import OpenAI
 
@@ -37,7 +38,28 @@ two famous food (comma separated):
 sentence-long greeting in the national language including stereotypical name of a citizen of that country, their job and a hobby (include a romanized transliteration beside the original language text if the language does not use the Latin script):
 flag colors:"""
 
-#Regional list of countries
+
+#Regional list of countries in asia
+ASIA = {
+    "China": "CHN",
+    "Japan": "JPN",
+    "South Korea": "KOR",
+    "Taiwan": "TWN",
+    "Thailand": "THA",
+    "Singapore": "SGP",
+    "Malaysia": "MYS",
+    "Indonesia": "IDN",
+    "India": "IND",
+    "Pakistan": "PAK",
+    "Vietnam": "VNM",
+    "Philippines": "PHL",
+    "Cambodia": "KHM",
+    "Laos": "LAO",
+    "Myanmar": "MMR",
+    "Bangladesh": "BGD",
+}
+
+#Regional list of countries in europe
 EUROPE = {
     "United Kingdom": "GBR",
     "France": "FRA",
@@ -56,6 +78,14 @@ EUROPE = {
     "Romania": "ROU",
     "Ukraine": "UKR",
 }
+
+REGIONS = {
+    "Europe": EUROPE,
+    "Asia": ASIA,
+}
+
+region = st.session_state.get("region", "Europe")   # hard-coded fallback for testing
+countries = REGIONS[region]                          # the actual dict
 
 MAX_ATTEMPTS = 3
 HINT_BUDGET = 6
@@ -128,8 +158,7 @@ def generate_custom_hint(country, custom_hint_prompt):
     return response.choices[0].message.content.strip().strip('"')
 
 def start_round():
-    # target = random.choice(list(EUROPE))
-    target = "Russia" # temp hard code
+    target = random.choice(list(countries))
     hints = parse_hints(generate_default_hints(target))
     if not hints:
         st.error("The model's reply didn't have all four hints. Please try again.")
@@ -146,7 +175,7 @@ def start_round():
 
 st.title("Guess the Country")
 
-df = pd.DataFrame({"country": list(EUROPE), "iso": list(EUROPE.values())})
+df = pd.DataFrame({"country": list(countries), "iso": list(countries.values())})
 
 fig = px.choropleth(
     df,
@@ -229,6 +258,7 @@ guessed_country = st.text_input("Country Name:", placeholder="TIP: Hover over th
 if st.button("Submit", disabled=(not attempts_exist) or (not guessed_country.strip())): #check if attempts still exist and guess field not empty.
     if guessed_country.strip().casefold() == st.session_state.target.casefold(): # forgive capitalization of country names in user input
         st.session_state.solved = True
+        st.session_state.attempts_left -= 1
     else:
         st.session_state.attempts_left -= 1
 
